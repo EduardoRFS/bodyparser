@@ -169,6 +169,31 @@ describe('test/middleware.test.js', function () {
     });
   });
 
+  describe('text body', function () {
+    const app = App();
+
+    it('should parse text body ok', function (done) {
+      app.use(function(ctx) {
+        ctx.request.body.should.eql('foobar');
+        ctx.body = ctx.request.body;
+      });
+      request(app.listen())
+      .post('/')
+      .type('text')
+      .send('foobar')
+      .expect('foobar', done);
+    });
+
+    it('should parse text body reach the limit size', function (done) {
+      const app = App({formLimit: 10});
+      request(app.listen())
+      .post('/')
+      .type('form')
+      .send('foobazzzzzzzzzzzz')
+      .expect(413, done);
+    });
+  });
+
   describe('extent type', function () {
     it('should extent json ok', function (done) {
       const app = App({

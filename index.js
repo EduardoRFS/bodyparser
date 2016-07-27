@@ -20,6 +20,7 @@ const parse = require('co-body');
  * @param [Object] opts
  *   - {String} jsonLimit default '1mb'
  *   - {String} formLimit default '56kb'
+ *   - {String} textLimit default '1mb'
  *   - {string} encoding default 'utf-8'
  *   - {Object} extendTypes
  */
@@ -34,6 +35,7 @@ module.exports = function (opts) {
 
   const jsonOpts = jsonOptions(opts);
   const formOpts = formOptions(opts);
+  const textOpts = textOptions(opts);
   const extendTypes = opts.extendTypes || {};
 
   // default json types
@@ -49,8 +51,14 @@ module.exports = function (opts) {
     'application/x-www-form-urlencoded',
   ];
 
+  // default text types
+  const textTypes = [
+    'text/plain'
+  ];
+
   extendType(jsonTypes, extendTypes.json);
   extendType(formTypes, extendTypes.form);
+  extendType(textTypes, extendTypes.text);
 
   return function bodyParser(ctx, next) {
     if (ctx.request.body !== undefined) return next();
@@ -66,6 +74,8 @@ module.exports = function (opts) {
       return parse.json(ctx, jsonOpts);
     } else if (ctx.request.is(formTypes)) {
       return parse.form(ctx, formOpts);
+    } else if (ctx.request.is(textTypes)) {
+      return parse.text(ctx, textOpts);
     } else {
       return Promise.resolve({});
     }
@@ -86,6 +96,12 @@ function formOptions(opts) {
   return formOpts;
 }
 
+function textOptions(opts) {
+  const textOpts = {};
+  Object.assign(textOpts, opts);
+  textOpts.limit = opts.textLimit;
+  return textOpts;
+}
 function extendType(original, extend) {
   if (extend) {
     if (!Array.isArray(extend)) {
